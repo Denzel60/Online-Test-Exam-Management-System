@@ -1,7 +1,9 @@
 import bcrypt from "bcrypt";
-import prisma from "../config/prisma.js";
+import { db } from "../db/index.js";
+import { users } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 
-const createUser = async (req, res) => {
+export const createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
@@ -21,11 +23,13 @@ const createUser = async (req, res) => {
     }
 
     // 3️⃣ Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
 
-    if (existingUser) {
+    if (existingUser.length > 0) {
       return res.status(409).json({
         message: "User with this email already exists"
       });
@@ -35,21 +39,21 @@ const createUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 5️⃣ Create user
-    const user = await prisma.user.create({
-      data: {
+    const [user] = await db
+      .insert(users)
+      .values({
         name,
         email,
         password: hashedPassword,
         role
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true
-      }
-    });
+      })
+      .returning({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        createdAt: users.createdAt
+      });
 
     // 6️⃣ Response
     return res.status(201).json({
