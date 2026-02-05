@@ -19,6 +19,6 @@ router.patch(
   updateUserRole
 );
 
-router.delete('/deleteUser/:id', deleteUser); 
+router.delete('/deleteUser/:id', authenticate, deleteUser); 
 
 export default router;

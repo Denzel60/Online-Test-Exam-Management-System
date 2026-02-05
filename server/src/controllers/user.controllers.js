@@ -126,8 +126,47 @@ const updateUserRole = async (req, res) => {
   });
 };
 
-const deleteUser = (req, res) => {
-  res.send(`Delete user with id ${req.params.id}`);
-}
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1️⃣ Validate ID
+    if (!id || isNaN(id)) {
+      return res.status(400).json({
+        message: "Valid user ID is required"
+      });
+    }
+
+    // 2️⃣ Check if user exists
+    const existingUser = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, Number(id)))
+      .limit(1);
+
+    if (existingUser.length === 0) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    // 3️⃣ Delete user
+    await db
+      .delete(users)
+      .where(eq(users.id, Number(id)));
+
+    // 4️⃣ Response
+    return res.status(200).json({
+      message: "User deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Delete user error:", error);
+
+    return res.status(500).json({
+      message: "Server error"
+    });
+  }
+};
 
 export { loginUser, createUser, updateUserRole, deleteUser };
