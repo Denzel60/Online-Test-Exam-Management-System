@@ -1,14 +1,32 @@
-import "dotenv/config";
+// import "dotenv/config";
+// import { defineConfig } from 'drizzle-kit';
 
-export default {
+// export default defineConfig({
+//   schema: "./src/db/schema.js",
+//   out: "./drizzle",
+
+//   // ✅ REQUIRED
+//   dialect: "postgresql",
+
+//   // ✅ REQUIRED
+//   dbCredentials: {
+//     url: process.env.DATABASE_URL,
+//   }
+// });
+
+
+import "dotenv/config";
+import { defineConfig } from "drizzle-kit";
+
+export default defineConfig({
   schema: "./src/db/schema.js",
   out: "./drizzle",
 
-  // ✅ REQUIRED
-  dialect: "postgresql",
+  // ✅ Must be exactly "pg" for Drizzle Kit v0.20.14
+  driver: "pg",
 
-  // ✅ REQUIRED
+  // ✅ Connection string
   dbCredentials: {
-    url: process.env.DATABASE_URL
-  }
-};
+    connectionString: process.env.DATABASE_URL,
+  },
+});

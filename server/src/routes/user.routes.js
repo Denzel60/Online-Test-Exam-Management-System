@@ -1,24 +1,40 @@
-import { Router } from 'express';
-import { loginUser, createUser, updateUserRole, deleteUser } from '../controllers/user.controllers.js';
-import validateUser from '../middlewares/validateUser.middleware.js';
+import { Router } from "express";
+import {
+  // Auth
+  createUser,
+  loginUser,
+  // Self-service
+  getMe,
+  updateMe,
+  // Admin
+  getAllUsers,
+  getUserById,
+  updateUserRole,
+  deleteUser,
+} from "../controllers/user.controllers.js";
 import { authenticate } from "../middlewares/auth.middlewares.js";
-import { studentOnly, teacherOnly, adminOnly } from "../middlewares/roles.middlewares.js";
-import { refreshToken } from './auth.routes.js';
+import { adminOnly } from "../middlewares/roles.middlewares.js";
 
 const router = Router();
 
-// Define user-related routes here
-router.post('/loginUser', authenticate, studentOnly, loginUser);
+// ─────────────────────────────────────────────
+// 🔐 AUTH  (public)
+// ─────────────────────────────────────────────
+router.post("/register", createUser);
+router.post("/login", loginUser);
 
-router.post('/createUser', validateUser, createUser);
+// ─────────────────────────────────────────────
+// 👤 SELF-SERVICE  (any authenticated user)
+// ─────────────────────────────────────────────
+router.get("/me", authenticate, getMe);
+router.patch("/me", authenticate, updateMe);
 
-router.patch(
-  "/role/:id",
-  authenticate,
-  adminOnly,
-  updateUserRole
-);
-
-router.delete('/deleteUser/:id', authenticate, deleteUser); 
+// ─────────────────────────────────────────────
+// 🛡️ ADMIN  (admin only)
+// ─────────────────────────────────────────────
+router.get("/", authenticate, adminOnly, getAllUsers);
+router.get("/:id", authenticate, adminOnly, getUserById);
+router.patch("/:id/role", authenticate, adminOnly, updateUserRole);
+router.delete("/:id", authenticate, adminOnly, deleteUser);
 
 export default router;

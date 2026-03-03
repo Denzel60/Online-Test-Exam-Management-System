@@ -1,10 +1,10 @@
 {
-  "id": "717cd46f-0ebf-48d8-ab80-22a3abfe456d",
+  "id": "c97ffad1-4029-40a7-a981-08d0580b6d75",
   "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "7",
-  "dialect": "postgresql",
+  "version": "5",
+  "dialect": "pg",
   "tables": {
-    "public.users": {
+    "users": {
       "name": "users",
       "schema": "",
       "columns": {
@@ -57,18 +57,11 @@
             "email"
           ]
         }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      }
     }
   },
   "enums": {},
   "schemas": {},
-  "sequences": {},
-  "roles": {},
-  "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},
