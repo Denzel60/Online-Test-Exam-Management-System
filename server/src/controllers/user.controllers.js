@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
-import { eq, asc, desc, ilike, or, and, count  } from "drizzle-orm";
+import { eq, asc, desc, ilike, or, and, count, inArray } from "drizzle-orm";
 import {
   createUserSchema,
   loginSchema,
@@ -358,6 +358,53 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const deleteMultipleUsers = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    // Validate that ids is a non-empty array
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Invalid or empty user IDs array" });
+    }
+
+    // Parse and validate each ID is a valid number
+    const parsedIds = ids.map(Number);
+    if (parsedIds.some(isNaN)) {
+      return res.status(400).json({ message: "All user IDs must be valid numbers" });
+    }
+
+    // Prevent self-deletion
+    if (parsedIds.includes(req.user.userId)) {
+      return res.status(403).json({ message: "Admins cannot delete themselves" });
+    }
+
+    // Check which users actually exist
+    const existing = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(inArray(users.id, parsedIds));
+
+    if (existing.length === 0) {
+      return res.status(404).json({ message: "No users found for the provided IDs" });
+    }
+
+    // Perform the delete only on confirmed existing users
+    const existingIds = existing.map((u) => u.id);
+    await db.delete(users).where(inArray(users.id, existingIds));
+
+    // Report back any IDs that were skipped (not found)
+    const notFoundIds = parsedIds.filter((id) => !existingIds.includes(id));
+    return res.status(200).json({
+      message: `${existingIds.length} user(s) deleted successfully`,
+      deleted: existingIds,
+      ...(notFoundIds.length > 0 && { notFound: notFoundIds }),
+    });
+  } catch (error) {
+    console.error("deleteMultipleUsers error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   // Auth
   createUser,
@@ -370,4 +417,5 @@ export {
   getUserById,
   updateUserRole,
   deleteUser,
+  deleteMultipleUsers,
 };

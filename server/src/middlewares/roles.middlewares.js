@@ -19,3 +19,10 @@ export const adminOnly = (req, res, next) => {
   }
   next();
 };
+
+export const adminOrTeacher = (req, res, next) => {
+  if (req.user.role === "admin" || req.user.role === "teacher") {
+    return next();
+  }
+  return res.status(403).json({ message: "Access denied: Admins and Teachers only" });
+};

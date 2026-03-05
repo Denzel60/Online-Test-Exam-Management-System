@@ -11,6 +11,7 @@ import {
   getUserById,
   updateUserRole,
   deleteUser,
+  deleteMultipleUsers
 } from "../controllers/user.controllers.js";
 import { authenticate } from "../middlewares/auth.middlewares.js";
 import { adminOnly } from "../middlewares/roles.middlewares.js";
@@ -35,6 +36,7 @@ router.patch("/me", authenticate, updateMe);
 router.get("/", authenticate, adminOnly, getAllUsers);
 router.get("/:id", authenticate, adminOnly, getUserById);
 router.patch("/:id/role", authenticate, adminOnly, updateUserRole);
+router.delete("/bulk", authenticate, adminOnly, deleteMultipleUsers);
 router.delete("/:id", authenticate, adminOnly, deleteUser);
 
 export default router;

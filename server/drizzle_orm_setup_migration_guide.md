@@ -15,6 +15,7 @@
     - [⚠️ Important Notes](#️-important-notes)
   - [🧪 6. Generate \& Run Migrations](#-6-generate--run-migrations)
     - [Generate migration files](#generate-migration-files)
+    - [Push migration files](#push-migration-files)
     - [Apply migrations to the database](#apply-migrations-to-the-database)
   - [📁 Recommended Folder Structure](#-recommended-folder-structure)
   - [🧠 Prisma → Drizzle Comparison](#-prisma--drizzle-comparison)
@@ -54,8 +55,8 @@ Your `package.json` must include:
 From your project root (usually `server/`):
 
 ```bash
-npm install drizzle-orm pg dotenv
-npm install -D drizzle-kit
+npm install drizzle-orm@0.29.5 pg dotenv
+npm install -D drizzle-kit@0.20.14
 ```
 
 ---
@@ -138,7 +139,7 @@ import "dotenv/config";
 export default {
   schema: "./src/db/schema.js",
   out: "./drizzle",
-  dialect: "postgresql",
+  driver: "pg",
   dbCredentials: {
     url: process.env.DATABASE_URL
   }
@@ -153,18 +154,24 @@ export default {
 
 ---
 
+
 ## 🧪 6. Generate & Run Migrations
 
 ### Generate migration files
 
 ```bash
-npx drizzle-kit generate:p
+npx drizzle-kit generate:pg
+```
+### Push migration files
+
+```bash
+npx drizzle-kit push:pg
 ```
 
 ### Apply migrations to the database
 
 ```bash
-npx drizzle-kit migrate:p
+npx drizzle-kit migrate:pg
 ```
 
 This will:
@@ -189,8 +196,8 @@ src/
  │   └── schema.js
  ├── controllers/
  ├── routes/
- ├── app.js
- └── server.js
+ ├── index.js
+ └── drizzle.config.js
 
 drizzle/
  ├── 0000_initial.sql
