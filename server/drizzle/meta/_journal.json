@@ -15,6 +15,13 @@
       "when": 1772622031636,
       "tag": "0001_dashing_darwin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1772711012292,
+      "tag": "0002_short_joshua_kane",
+      "breakpoints": true
     }
   ]
 }

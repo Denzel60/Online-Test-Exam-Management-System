@@ -65,3 +65,27 @@ export const testQuestions = pgTable("test_questions", {
   questionId: integer("question_id").notNull().references(() => questions.id, { onDelete: "cascade" }), // 👈 add this
   order: integer("order").notNull(),
 });
+
+export const attemptStatusEnum = pgEnum("attempt_status", ["in_progress", "submitted"]);
+
+export const testAttempts = pgTable("test_attempts", {
+  id: serial("id").primaryKey(),
+  testId: integer("test_id").notNull().references(() => tests.id, { onDelete: "cascade" }),
+  studentId: integer("student_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: attemptStatusEnum("status").default("in_progress"),
+  score: integer("score"),
+  totalPoints: integer("total_points"),
+  isPassed: boolean("is_passed"),
+  startedAt: timestamp("started_at").defaultNow(),
+  submittedAt: timestamp("submitted_at"),
+});
+
+export const attemptAnswers = pgTable("attempt_answers", {
+  id: serial("id").primaryKey(),
+  attemptId: integer("attempt_id").notNull().references(() => testAttempts.id, { onDelete: "cascade" }),
+  questionId: integer("question_id").notNull().references(() => questions.id),
+  selectedOptionId: integer("selected_option_id").references(() => questionOptions.id), // for multiple_choice & true_false
+  answerText: text("answer_text"), // for short_answer
+  isCorrect: boolean("is_correct"),
+  pointsAwarded: integer("points_awarded").default(0),
+});
