@@ -335,8 +335,11 @@ export const submitAttempt = async (req, res) => {
         .set({ isCorrect, pointsAwarded })
         .where(eq(attemptAnswers.id, studentAnswer.id));
     }
-
-    const isPassed = totalPoints > 0 ? score / totalPoints >= 0.5 : false;
+    
+    // Replace the isPassed line in submitAttempt with this
+    const [testRecord] = await db.select().from(tests).where(eq(tests.id, attempt.testId)).limit(1);
+    const passMarkPercent = testRecord?.passMarkPercent ?? 50;
+    const isPassed = totalPoints > 0 ? (score / totalPoints) * 100 >= passMarkPercent : false;
 
     // Mark attempt as submitted
     const [submitted] = await db
@@ -389,13 +392,27 @@ export const getAttemptResult = async (req, res) => {
       return res.status(400).json({ message: "Attempt has not been submitted yet" });
     }
 
-    // Fetch answers with question and correct option details
     const answers = await db
       .select()
       .from(attemptAnswers)
       .where(eq(attemptAnswers.attemptId, attemptId));
 
+    // ✅ Guard against empty answers
+    if (answers.length === 0) {
+      return res.status(200).json({
+        result: {
+          score: attempt.score,
+          totalPoints: attempt.totalPoints,
+          percentage: 0,
+          isPassed: attempt.isPassed,
+          submittedAt: attempt.submittedAt,
+        },
+        breakdown: [],
+      });
+    }
+
     const questionIds = answers.map((a) => a.questionId);
+
     const allQuestions = await db
       .select()
       .from(questions)
@@ -406,7 +423,6 @@ export const getAttemptResult = async (req, res) => {
       .from(questionOptions)
       .where(inArray(questionOptions.questionId, questionIds));
 
-    // Build detailed result per question
     const breakdown = allQuestions.map((q) => {
       const studentAnswer = answers.find((a) => a.questionId === q.id);
       const correctOption = allOptions.find((o) => o.questionId === q.id && o.isCorrect);

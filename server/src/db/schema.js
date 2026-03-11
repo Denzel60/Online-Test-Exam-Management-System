@@ -20,13 +20,15 @@ export const users = pgTable("users", {
 export const questionTypeEnum = pgEnum("question_type", ["multiple_choice", "true_false", "short_answer"]);
 export const testStatusEnum = pgEnum("test_status", ["draft", "published", "archived"]);
 
+// Add passmark to tests table
 export const tests = pgTable("tests", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
   createdBy: integer("created_by").notNull().references(() => users.id),
-  timeLimit: integer("time_limit"), // in minutes, null = no limit
+  timeLimit: integer("time_limit"),
   maxAttempts: integer("max_attempts").default(1),
+  passMarkPercent: integer("pass_mark_percent").default(50), // 👈 add this
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
   status: testStatusEnum("status").default("draft"),
@@ -68,6 +70,7 @@ export const testQuestions = pgTable("test_questions", {
 
 export const attemptStatusEnum = pgEnum("attempt_status", ["in_progress", "submitted"]);
 
+// Add isFlagged to testAttempts table
 export const testAttempts = pgTable("test_attempts", {
   id: serial("id").primaryKey(),
   testId: integer("test_id").notNull().references(() => tests.id, { onDelete: "cascade" }),
@@ -76,6 +79,8 @@ export const testAttempts = pgTable("test_attempts", {
   score: integer("score"),
   totalPoints: integer("total_points"),
   isPassed: boolean("is_passed"),
+  isFlagged: boolean("is_flagged").default(false), // 👈 add this
+  flagReason: text("flag_reason"),                 // 👈 add this
   startedAt: timestamp("started_at").defaultNow(),
   submittedAt: timestamp("submitted_at"),
 });
