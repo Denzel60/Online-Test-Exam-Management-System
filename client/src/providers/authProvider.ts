@@ -10,10 +10,11 @@ export const authProvider = {
         password,
       });
 
-      localStorage.setItem("token", data.token);
+      // ✅ Updated to match your backend response keys
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Redirect based on role
       const role = data.user.role;
       return {
         success: true,
@@ -36,16 +37,51 @@ export const authProvider = {
   },
 
   logout: async () => {
-    localStorage.removeItem("token");
+    // ✅ Clear all tokens on logout
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     return { success: true, redirectTo: "/login" };
   },
 
   check: async () => {
-    const token = localStorage.getItem("token");
-    return token
-      ? { authenticated: true }
-      : { authenticated: false, redirectTo: "/login" };
+    const token = localStorage.getItem("accessToken"); // ✅ updated key
+
+    if (!token) {
+      return { authenticated: false, redirectTo: "/login" };
+    }
+
+    // ✅ Check if token is expired before making any request
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const isExpired = payload.exp * 1000 < Date.now();
+
+      if (isExpired) {
+        // Try to refresh before declaring unauthenticated
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (!refreshToken) {
+          localStorage.clear();
+          return { authenticated: false, redirectTo: "/login" };
+        }
+
+        try {
+          const { data } = await axios.post(`${API_URL}/users/refresh`, {
+            refreshToken,
+          });
+          localStorage.setItem("accessToken", data.accessToken);
+          return { authenticated: true };
+        } catch {
+          localStorage.clear();
+          return { authenticated: false, redirectTo: "/login" };
+        }
+      }
+
+      return { authenticated: true };
+    } catch {
+      // Token malformed
+      localStorage.clear();
+      return { authenticated: false, redirectTo: "/login" };
+    }
   },
 
   getPermissions: async () => {
@@ -60,7 +96,24 @@ export const authProvider = {
 
   onError: async (error: any) => {
     if (error?.response?.status === 401) {
-      return { logout: true };
+      // ✅ Try refresh on 401 before logging out
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (refreshToken) {
+        try {
+          const { data } = await axios.post(`${API_URL}/users/refresh`, {
+            refreshToken,
+          });
+          localStorage.setItem("accessToken", data.accessToken);
+          return { error }; // don't logout, just return error so request can retry
+        } catch {
+          localStorage.clear();
+          return { logout: true, redirectTo: "/login" };
+        }
+      }
+
+      localStorage.clear();
+      return { logout: true, redirectTo: "/login" };
     }
     return { error };
   },

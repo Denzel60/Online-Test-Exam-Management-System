@@ -3,6 +3,7 @@ import {
   // Auth
   createUser,
   loginUser,
+  refreshToken,
   // Self-service
   getMe,
   updateMe,
@@ -23,6 +24,7 @@ const router = Router();
 // ─────────────────────────────────────────────
 router.post("/register", createUser);
 router.post("/login", loginUser);
+router.post("/refresh", refreshToken);
 
 // ─────────────────────────────────────────────
 // 👤 SELF-SERVICE  (any authenticated user)

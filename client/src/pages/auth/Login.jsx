@@ -16,6 +16,38 @@ export const Login = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // const onFinish = async (values) => {
+  //   setLoading(true);
+  //   setError("");
+  //   try {
+  //     const { data } = await axiosInstance.post("/users/login", {
+  //       email: values.email,
+  //       password: values.password,
+  //     });
+
+  //     console.log("✅ Login response:", data);           // check what backend returns
+  //     console.log("✅ Token:", data.token);              // check token exists
+  //     console.log("✅ User:", data.user);                // check user exists
+  //     console.log("✅ Role:", data.user?.role);          // check role exists
+
+  //     console.log("✅ Stored in localStorage");
+
+  //     localStorage.setItem("token", data.token);
+  //     localStorage.setItem("user", JSON.stringify(data.user));
+
+  //     const role = data.user.role;
+  //     console.log("✅ Redirecting to:", `/${role}/dashboard`);
+
+  //     if (role === "admin") navigate("/admin/dashboard");
+  //     else if (role === "teacher") navigate("/teacher/dashboard");
+  //     else navigate("/student/dashboard");
+  //   } catch (err) {
+  //     setError(err.response?.data?.message || "Invalid email or password");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const onFinish = async (values) => {
     setLoading(true);
     setError("");
@@ -25,13 +57,24 @@ export const Login = () => {
         password: values.password,
       });
 
-      localStorage.setItem("token", data.token);
+      // ✅ Your backend returns accessToken not token
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      console.log("✅ Login response:", data);           // check what backend returns
+      console.log("✅ Token:", data.accessToken);              // check token exists
+      console.log("✅ User:", data.user);                // check user exists
+      console.log("✅ Role:", data.user?.role);          // check role exists
+
+      console.log("✅ Stored in localStorage");
+
       const role = data.user.role;
+      console.log("✅ Redirecting to:", `/${role}/dashboard`);
       if (role === "admin") navigate("/admin/dashboard");
       else if (role === "teacher") navigate("/teacher/dashboard");
       else navigate("/student/dashboard");
+
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password");
     } finally {

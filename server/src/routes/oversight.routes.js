@@ -6,6 +6,7 @@ import {
   flagAttempt,
   getLeaderboard,
   exportResults,
+  unflagAttempt 
 } from "../controllers/oversight.controllers.js";
 import { authenticate } from "../middlewares/auth.middlewares.js";
 import { adminOrTeacher } from "../middlewares/roles.middlewares.js";
@@ -27,6 +28,7 @@ router.patch("/attempts/:attemptId/questions/:questionId/grade", authenticate, a
 // 🚩 FLAGGING
 // ─────────────────────────────────────────────
 router.patch("/attempts/:attemptId/flag", authenticate, adminOrTeacher, flagAttempt);
+router.patch("/attempts/:attemptId/unflag", authenticate, adminOrTeacher, unflagAttempt);
 
 // ─────────────────────────────────────────────
 // 🏆 LEADERBOARD

@@ -111,6 +111,43 @@ const loginUser = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────
+// 👤 USER REFRESH TOKEN CONTROLLERS
+// ─────────────────────────────────────────────
+
+/**
+ * post /refresh
+ * Sends refres token — returns the refresh token if valid, else error
+ */
+
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: "Refresh token required" });
+    }
+
+    // Verify the refresh token
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
+      if (err) {
+        return res.status(403).json({ message: "Invalid or expired refresh token" });
+      }
+
+      // Generate new access token
+      const accessToken = generateAccessToken({
+        userId: decoded.userId,
+        role: decoded.role,
+      });
+
+      return res.status(200).json({ accessToken });
+    });
+  } catch (error) {
+    console.error("refreshToken error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ─────────────────────────────────────────────
 // 👤 USER SELF-SERVICE CONTROLLERS
 // ─────────────────────────────────────────────
 
@@ -409,6 +446,7 @@ export {
   // Auth
   createUser,
   loginUser,
+  refreshToken,
   // Self-service
   getMe,
   updateMe,

@@ -267,6 +267,27 @@ export const flagAttempt = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────
+// 🚩 UNFLAG A SUSPICIOUS ATTEMPT
+// ─────────────────────────────────────────────
+
+export const unflagAttempt = async (req, res) => {
+  try {
+    const attemptId = Number(req.params.attemptId);
+    if (isNaN(attemptId)) return res.status(400).json({ message: "Invalid attempt ID" });
+
+    await db
+      .update(testAttempts)
+      .set({ isFlagged: false, flagReason: null })
+      .where(eq(testAttempts.id, attemptId));
+
+    return res.status(200).json({ message: "Attempt unflagged successfully" });
+  } catch (error) {
+    console.error("unflagAttempt error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ─────────────────────────────────────────────
 // 🏆 LEADERBOARD FOR A TEST
 // ─────────────────────────────────────────────
 
