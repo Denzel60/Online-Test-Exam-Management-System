@@ -23,9 +23,24 @@ import { Settings } from "./pages/admin/Settings.jsx";
 
 // Student
 import { StudentDashboard } from "./pages/student/Dashboard.jsx";
-// import { AvailableTests } from "./pages/student/AvailableTests.jsx";
-// import { TakeTest } from "./pages/student/TakeTest.jsx";
-// import { StudentResults } from "./pages/student/Results.jsx";
+import { AvailableTests } from "./pages/student/AvailableTests.jsx";
+import { TakeTest } from "./pages/student/TakeTest.jsx";
+import { MyAttempts } from "./pages/student/MyAttempts.jsx";
+import { MyResults } from "./pages/student/MyResults.jsx";
+import { AttemptResult } from "./pages/student/AttemptResult.jsx";
+import { StudentSettings } from "./pages/student/StudentSettings.jsx";
+
+// Teacher
+import { TeacherDashboard } from "./pages/teacher/Dashboard.jsx";
+import { MyTests } from "./pages/teacher/MyTests.jsx";
+import { CreateTest } from "./pages/teacher/CreateTest.jsx";
+import { TeacherResults } from "./pages/teacher/Results.jsx";
+import { TeacherFlagged } from "./pages/teacher/Flagged.jsx";
+import { TeacherSettings } from "./pages/teacher/Settings.jsx";
+import { EditTest } from "./pages/teacher/EditTest.jsx";
+import { Leaderboard } from "./pages/teacher/Leaderboard.jsx";
+import { AttemptDetail } from "./pages/teacher/AttemptDetail.jsx";
+
 
 const API_URL = "http://localhost:3000/api";
 
@@ -42,74 +57,83 @@ const ProtectedRoute = ({ allowedRole }: { allowedRole: string }) => {
 
 export default function App() {
   return (
-      <BrowserRouter
+    <BrowserRouter
       future={{
         v7_startTransition: true,
         v7_relativeSplatPath: true,
       }}
-      >
-        <ConfigProvider theme={RefineThemes.Blue}>
-          <AntApp>
-            <Refine
-              dataProvider={dataProvider(API_URL)}
-              routerProvider={routerProvider}
-              authProvider={authProvider}
-              notificationProvider={notificationProvider}
-              resources={[]}
-            >
-              <Routes>
-                {/* ─────────────────────────────────────────────
+    >
+      <ConfigProvider theme={RefineThemes.Blue}>
+        <AntApp>
+          <Refine
+            dataProvider={dataProvider(API_URL)}
+            routerProvider={routerProvider}
+            authProvider={authProvider}
+            notificationProvider={notificationProvider}
+            resources={[]}
+          >
+            <Routes>
+              {/* ─────────────────────────────────────────────
                   🌐 PUBLIC ROUTES
               ───────────────────────────────────────────── */}
-                <Route index element={<Navigate to="/login" />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+              <Route index element={<Navigate to="/login" />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-                {/* ─────────────────────────────────────────────
+              {/* ─────────────────────────────────────────────
                   🛡️ ADMIN ROUTES
               ───────────────────────────────────────────── */}
-                <Route element={<ProtectedRoute allowedRole="admin" />}>
-                  <Route>
-                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                    <Route path="/admin/users" element={<UserList />} />  
-                    <Route path="/admin/tests" element={<AllTests/>} />
-                    <Route path="/admin/flagged" element={<Flagged />} />  
-                    <Route path="/admin/settings" element={<Settings />} />  
-                  </Route>
+              <Route element={<ProtectedRoute allowedRole="admin" />}>
+                <Route>
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/users" element={<UserList />} />
+                  <Route path="/admin/tests" element={<AllTests />} />
+                  <Route path="/admin/flagged" element={<Flagged />} />
+                  <Route path="/admin/settings" element={<Settings />} />
                 </Route>
+              </Route>
 
-                {/* ─────────────────────────────────────────────
+              {/* ─────────────────────────────────────────────
                   👩‍🏫 TEACHER ROUTES
               ───────────────────────────────────────────── */}
-                <Route element={<ProtectedRoute allowedRole="teacher" />}>
-                  <Route>
-                    <Route path="/teacher/dashboard" element={<div>Teacher Dashboard</div>} />
-                    <Route path="/teacher/tests" element={<div>My Tests Page</div>} />
-                    <Route path="/teacher/tests/create" element={<div>Create Test Page</div>} />
-                    <Route path="/teacher/results" element={<div>Results Page</div>} />
-                  </Route>
+              <Route element={<ProtectedRoute allowedRole="teacher" />}>
+                <Route>
+                  <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+                  <Route path="/teacher/tests" element={<MyTests />} />
+                  <Route path="/teacher/tests/create" element={<CreateTest />} />
+                  <Route path="/teacher/results" element={<TeacherResults />} />
+                  <Route path="/teacher/flagged" element={<TeacherFlagged />} />
+                  <Route path="/teacher/settings" element={<TeacherSettings />} />
+                  <Route path="/teacher/tests/:testId/edit" element={<EditTest />} />
+                  <Route path="/teacher/leaderboard" element={<Leaderboard />} />
+                  <Route path="/oversight/attempts/:attemptId" element={<AttemptDetail />} />
                 </Route>
+              </Route>
 
-                {/* ─────────────────────────────────────────────
+              {/* ─────────────────────────────────────────────
                   👨‍🎓 STUDENT ROUTES
               ───────────────────────────────────────────── */}
-                <Route element={<ProtectedRoute allowedRole="student" />}>
-                  <Route>
-                    <Route path="/student/dashboard" element={<StudentDashboard />} />
-                    <Route path="/student/tests" element={<div>Available Tests</div>} />
-                    <Route path="/student/tests/:testId" element={<div>Take Test</div>} />
-                    <Route path="/student/results" element={<div>My Results</div>} />
-                  </Route>
-                </Route>
+              <Route element={<ProtectedRoute allowedRole="student" />}>
+                <Route>
+                  <Route path="/student/dashboard" element={<StudentDashboard />} />
+                  <Route path="/student/tests" element={<AvailableTests />} />
+                  <Route path="/student/tests/:testId" element={<TakeTest />} />
+                  <Route path="/student/attempts" element={<MyAttempts />} />
+                  <Route path="/student/results" element={<MyResults />} />
+                  <Route path="/student/results/:attemptId" element={<AttemptResult />} />
+                  <Route path="/student/settings" element={<StudentSettings />} />
 
-                {/* ─────────────────────────────────────────────
+                </Route>
+              </Route>
+
+              {/* ─────────────────────────────────────────────
                   404
               ───────────────────────────────────────────── */}
-                <Route path="*" element={<Navigate to="/login" />} />
-              </Routes>
-            </Refine>
-          </AntApp>
-        </ConfigProvider>
-      </BrowserRouter>
-      );
+              <Route path="*" element={<Navigate to="/login" />} />
+            </Routes>
+          </Refine>
+        </AntApp>
+      </ConfigProvider>
+    </BrowserRouter>
+  );
 }

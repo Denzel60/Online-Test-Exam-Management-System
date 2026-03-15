@@ -7,42 +7,11 @@ import {
   testAttempts,
   attemptAnswers,
 } from "../db/schema.js";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 
 // ─────────────────────────────────────────────
 // 📋 GET AVAILABLE TESTS FOR STUDENTS
 // ─────────────────────────────────────────────
-
-// export const getAvailableTests = async (req, res) => {
-//   try {
-//     const now = new Date();
-
-//     const availableTests = await db
-//       .select({
-//         id: tests.id,
-//         title: tests.title,
-//         description: tests.description,
-//         timeLimit: tests.timeLimit,
-//         maxAttempts: tests.maxAttempts,
-//         startDate: tests.startDate,
-//         endDate: tests.endDate,
-//       })
-//       .from(tests)
-//       .where(eq(tests.status, "published"));
-
-//     // Filter by schedule if start/end dates are set
-//     const filtered = availableTests.filter((t) => {
-//       if (t.startDate && new Date(t.startDate) > now) return false;
-//       if (t.endDate && new Date(t.endDate) < now) return false;
-//       return true;
-//     });
-
-//     return res.status(200).json({ tests: filtered });
-//   } catch (error) {
-//     console.error("getAvailableTests error:", error);
-//     return res.status(500).json({ message: "Server error" });
-//   }
-// };
 
 export const getAvailableTests = async (req, res) => {
   try {
@@ -100,7 +69,19 @@ export const startAttempt = async (req, res) => {
       return res.status(403).json({ message: "Test has already ended" });
     }
 
-    // Check if student has an in_progress attempt to resume
+    // ✅ Always prepare the sanitized test object for response
+    const testData = {
+      id: test.id,
+      title: test.title,
+      description: test.description,
+      timeLimit: test.timeLimit,
+      maxAttempts: test.maxAttempts,
+      passMarkPercent: test.passMarkPercent,
+      startDate: test.startDate,
+      endDate: test.endDate,
+    };
+
+    // ── CHECK FOR IN PROGRESS ATTEMPT TO RESUME
     const [inProgress] = await db
       .select()
       .from(testAttempts)
@@ -120,14 +101,45 @@ export const startAttempt = async (req, res) => {
         .from(attemptAnswers)
         .where(eq(attemptAnswers.attemptId, inProgress.id));
 
+      // ✅ Also fetch questions so student can resume where they left off
+      const testQs = await db
+        .select({ question: questions, order: testQuestions.order })
+        .from(testQuestions)
+        .innerJoin(questions, eq(testQuestions.questionId, questions.id))
+        .where(eq(testQuestions.testId, testId))
+        .orderBy(testQuestions.order);
+
+      const questionIds = testQs.map((q) => q.question.id);
+
+      // ✅ Guard against empty questionIds to prevent inArray crash
+      const options = questionIds.length > 0
+        ? await db
+            .select({
+              id: questionOptions.id,
+              questionId: questionOptions.questionId,
+              text: questionOptions.text,
+            })
+            .from(questionOptions)
+            .where(inArray(questionOptions.questionId, questionIds))
+        : [];
+
+      const questionsWithOptions = testQs.map((q) => ({
+        ...q.question,
+        order: q.order,
+        options: options.filter((o) => o.questionId === q.question.id),
+      }));
+
       return res.status(200).json({
         message: "Resuming existing attempt",
         attempt: inProgress,
+        // ✅ Always include test so frontend can read timeLimit
+        test: testData,
+        questions: questionsWithOptions,
         savedAnswers: saved,
       });
     }
 
-    // Check max attempts
+    // ── CHECK MAX ATTEMPTS
     const previousAttempts = await db
       .select()
       .from(testAttempts)
@@ -145,7 +157,7 @@ export const startAttempt = async (req, res) => {
       });
     }
 
-    // Fetch test questions
+    // ── FETCH QUESTIONS
     const testQs = await db
       .select({ question: questions, order: testQuestions.order })
       .from(testQuestions)
@@ -153,24 +165,26 @@ export const startAttempt = async (req, res) => {
       .where(eq(testQuestions.testId, testId))
       .orderBy(testQuestions.order);
 
-    // Fetch options for each question (hide isCorrect from student)
     const questionIds = testQs.map((q) => q.question.id);
-    const options = await db
-      .select({
-        id: questionOptions.id,
-        questionId: questionOptions.questionId,
-        text: questionOptions.text,
-      })
-      .from(questionOptions)
-      .where(inArray(questionOptions.questionId, questionIds));
 
-    // Create new attempt
+    // ✅ Guard against empty questionIds to prevent inArray crash
+    const options = questionIds.length > 0
+      ? await db
+          .select({
+            id: questionOptions.id,
+            questionId: questionOptions.questionId,
+            text: questionOptions.text,
+          })
+          .from(questionOptions)
+          .where(inArray(questionOptions.questionId, questionIds))
+      : [];
+
+    // ── CREATE NEW ATTEMPT
     const [attempt] = await db
       .insert(testAttempts)
       .values({ testId, studentId, status: "in_progress" })
       .returning();
 
-    // Attach options to each question
     const questionsWithOptions = testQs.map((q) => ({
       ...q.question,
       order: q.order,
@@ -180,6 +194,8 @@ export const startAttempt = async (req, res) => {
     return res.status(201).json({
       message: "Attempt started",
       attempt,
+      // ✅ Always include test so frontend can read timeLimit
+      test: testData,
       questions: questionsWithOptions,
     });
   } catch (error) {
@@ -293,10 +309,14 @@ export const submitAttempt = async (req, res) => {
 
     // Fetch all correct options
     const questionIds = testQs.map((q) => q.question.id);
-    const allOptions = await db
-      .select()
-      .from(questionOptions)
-      .where(inArray(questionOptions.questionId, questionIds));
+
+    // ✅ Guard against empty questionIds to prevent inArray crash
+    const allOptions = questionIds.length > 0
+      ? await db
+          .select()
+          .from(questionOptions)
+          .where(inArray(questionOptions.questionId, questionIds))
+      : [];
 
     let totalPoints = 0;
     let score = 0;
@@ -335,11 +355,18 @@ export const submitAttempt = async (req, res) => {
         .set({ isCorrect, pointsAwarded })
         .where(eq(attemptAnswers.id, studentAnswer.id));
     }
-    
-    // Replace the isPassed line in submitAttempt with this
-    const [testRecord] = await db.select().from(tests).where(eq(tests.id, attempt.testId)).limit(1);
+
+    // ✅ Use passMarkPercent from the test record
+    const [testRecord] = await db
+      .select()
+      .from(tests)
+      .where(eq(tests.id, attempt.testId))
+      .limit(1);
+
     const passMarkPercent = testRecord?.passMarkPercent ?? 50;
-    const isPassed = totalPoints > 0 ? (score / totalPoints) * 100 >= passMarkPercent : false;
+    const isPassed = totalPoints > 0
+      ? (score / totalPoints) * 100 >= passMarkPercent
+      : false;
 
     // Mark attempt as submitted
     const [submitted] = await db
@@ -400,6 +427,8 @@ export const getAttemptResult = async (req, res) => {
     // ✅ Guard against empty answers
     if (answers.length === 0) {
       return res.status(200).json({
+        // ✅ Include attempt so frontend retake button can read testId
+        attempt,
         result: {
           score: attempt.score,
           totalPoints: attempt.totalPoints,
@@ -441,6 +470,8 @@ export const getAttemptResult = async (req, res) => {
     });
 
     return res.status(200).json({
+      // ✅ Include attempt so frontend retake button can read testId
+      attempt,
       result: {
         score: attempt.score,
         totalPoints: attempt.totalPoints,

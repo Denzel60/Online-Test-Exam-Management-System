@@ -14,6 +14,7 @@ import {
   MenuOutlined,
   ArrowRightOutlined,
   StarOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { axiosInstance } from "../../api/axiosInstance";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -27,6 +28,8 @@ const NAV_ITEMS = [
   { icon: <BookOutlined />, label: "Available Tests", path: "/student/tests" },
   { icon: <FileTextOutlined />, label: "My Attempts", path: "/student/attempts" },
   { icon: <BarChartOutlined />, label: "My Results", path: "/student/results" },
+  { icon: <SettingOutlined />, label: "Settings", path: "/student/settings" },
+
 ];
 
 const useWindowWidth = () => {
